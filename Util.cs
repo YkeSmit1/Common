@@ -168,11 +168,7 @@ namespace Common
 
         public static (Suit, int) GetLongestSuit(string northHand, string southHand)
         {
-            var suitLengthNorth = northHand.Split(',').Select(x => x.Length);
-            Debug.Assert(suitLengthNorth.Count() == 4);
-            var suitLengthSouth = southHand.Split(',').Select(x => x.Length);
-            Debug.Assert(suitLengthSouth.Count() == 4);
-            var suitLengthNS = suitLengthNorth.Zip(suitLengthSouth, (x, y) => x + y);
+            var suitLengthNS = GetSuitLengthNS(northHand, southHand);
             var maxSuitLength = suitLengthNS.Max();
             var longestSuit = suitLengthNS.ToList().IndexOf(maxSuitLength);
             return ((Suit)(3 - longestSuit), maxSuitLength);
@@ -191,15 +187,21 @@ namespace Common
         }
 
 
-        public static IEnumerable<(Suit suit, int length)> GetSuitsWithFit(string northHand, string southHand)
+        public static IEnumerable<Suit> GetSuitsWithFit(string northHand, string southHand)
+        {
+            var suitLengthNS = GetSuitLengthNS(northHand, southHand);
+            return suitLengthNS.Select((length, index) => ((Suit)(3 - index), length)).Where(x => x.length >= 8).Select(y => y.Item1);
+        }
+
+        private static IEnumerable<int> GetSuitLengthNS(string northHand, string southHand)
         {
             var suitLengthNorth = northHand.Split(',').Select(x => x.Length);
             Debug.Assert(suitLengthNorth.Count() == 4);
             var suitLengthSouth = southHand.Split(',').Select(x => x.Length);
             Debug.Assert(suitLengthSouth.Count() == 4);
-            var suitLengthNS = suitLengthNorth.Zip(suitLengthSouth, (x, y) => x + y);
-            return suitLengthNS.Select((length, index) => ((Suit)(3 - index), length)).OrderByDescending(x => x.length).TakeWhile(x => x.length >= 8);
+            return suitLengthNorth.Zip(suitLengthSouth, (x, y) => x + y);
         }
+
 
         public static int GetNumberOfTrumps(Suit suit, string northHand, string southHand)
         {
@@ -280,12 +282,13 @@ namespace Common
             _ => throw new ArgumentException("Unknown player"),
         };
 
-        public static string[] GetBoardsTosr(string board)
+        public static Dictionary<Player, string> GetBoardsTosr(string board)
         {
             var boardNoDealer = board[2..].Replace('.', ',');
             var suits = boardNoDealer.Split(" ");
             var suitsNFirst = suits.ToList().Rotate(3);
-            return suitsNFirst.ToArray();
+            return suitsNFirst.Select((suit, Index) => (suit, Index))
+                .ToDictionary(x => (Player)x.Index, x => x.suit);
         }
 
         public static Player GetPartner(Player player)

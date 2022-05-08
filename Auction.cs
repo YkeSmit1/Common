@@ -159,6 +159,13 @@ namespace Common
                 }
             }
         }
+        public Bid GetRelativeBid(Bid currentBid, int level, Player player)
+        {
+            var biddingRound = bids.Single(bids => bids.Value.Where(y => y.Value == currentBid).Any());
+            if (biddingRound.Key + level < 1)
+                return default;
+            return bids[biddingRound.Key + level].TryGetValue(player, out var bid) ? bid : default;
+        }
 
         public bool IsEndOfBidding()
         {
