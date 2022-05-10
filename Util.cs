@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
+using JetBrains.Annotations;
+
+// ReSharper disable InconsistentNaming
 
 namespace Common
 {
@@ -50,6 +50,7 @@ namespace Common
         GrandSlam,
     }
 
+    [PublicAPI]
     public static class Util
     {
         public static string GetSuitDescription(Suit suit)
@@ -168,7 +169,7 @@ namespace Common
 
         public static (Suit, int) GetLongestSuit(string northHand, string southHand)
         {
-            var suitLengthNS = GetSuitLengthNS(northHand, southHand);
+            var suitLengthNS = GetSuitLengthNS(northHand, southHand).ToList();
             var maxSuitLength = suitLengthNS.Max();
             var longestSuit = suitLengthNS.ToList().IndexOf(maxSuitLength);
             return ((Suit)(3 - longestSuit), maxSuitLength);
@@ -176,11 +177,11 @@ namespace Common
 
         public static (Suit, int) GetLongestSuitShape(string northHand, string southHandShape)
         {
-            var suitLengthNorth = northHand.Split(',').Select(x => x.Length);
-            Debug.Assert(suitLengthNorth.Count() == 4);
-            var suitLengthSouth = southHandShape.Select(x => int.Parse(x.ToString()));
-            Debug.Assert(suitLengthSouth.Count() == 4);
-            var suitLengthNS = suitLengthNorth.Zip(suitLengthSouth, (x, y) => x + y);
+            var suitLengthNorth = northHand.Split(',').Select(x => x.Length).ToList();
+            Debug.Assert(suitLengthNorth.Count == 4);
+            var suitLengthSouth = southHandShape.Select(x => int.Parse(x.ToString())).ToList();
+            Debug.Assert(suitLengthSouth.Count == 4);
+            var suitLengthNS = suitLengthNorth.Zip(suitLengthSouth, (x, y) => x + y).ToList();
             var maxSuitLength = suitLengthNS.Max();
             var longestSuit = suitLengthNS.ToList().IndexOf(maxSuitLength);
             return ((Suit)(3 - longestSuit), maxSuitLength);
@@ -195,10 +196,10 @@ namespace Common
 
         private static IEnumerable<int> GetSuitLengthNS(string northHand, string southHand)
         {
-            var suitLengthNorth = northHand.Split(',').Select(x => x.Length);
-            Debug.Assert(suitLengthNorth.Count() == 4);
-            var suitLengthSouth = southHand.Split(',').Select(x => x.Length);
-            Debug.Assert(suitLengthSouth.Count() == 4);
+            var suitLengthNorth = northHand.Split(',').Select(x => x.Length).ToList();
+            Debug.Assert(suitLengthNorth.Count == 4);
+            var suitLengthSouth = southHand.Split(',').Select(x => x.Length).ToList();
+            Debug.Assert(suitLengthSouth.Count == 4);
             return suitLengthNorth.Zip(suitLengthSouth, (x, y) => x + y);
         }
 
@@ -236,7 +237,7 @@ namespace Common
         {
             Debug.Assert(northHand.Length == 16);
             Debug.Assert(southHand.Length == 16);
-            // TODO Use single dummy analyses to find out the best trump suit
+            // TODO Use single dummy analysis to find out the best trump suit
             var (longestSuit, suitLength) = GetLongestSuit(northHand, southHand);
             // If we have a major fit return the major
             if (new List<Suit> { Suit.Spades, Suit.Hearts }.Contains(longestSuit))
@@ -247,14 +248,14 @@ namespace Common
             return Suit.NoTrump;
         }
 
-        public static (ExpectedContract expectedContract, Dictionary<ExpectedContract, int> confidence) GetExpectedContract(IEnumerable<int> scores)
+        public static (ExpectedContract expectedContract, Dictionary<ExpectedContract, int> confidence) GetExpectedContract(List<int> scores)
         {
             ExpectedContract expectedContract;
-            if (scores.Count(x => x == 13) / (double)scores.Count() > .6)
+            if (scores.Count(x => x == 13) / (double)scores.Count > .6)
                 expectedContract = ExpectedContract.GrandSlam;
-            else if (scores.Count(x => x == 12) / (double)scores.Count() > .6)
+            else if (scores.Count(x => x == 12) / (double)scores.Count > .6)
                 expectedContract = ExpectedContract.SmallSlam;
-            else if (scores.Count(x => x == 12 || x == 13) / (double)scores.Count() > .6)
+            else if (scores.Count(x => x == 12 || x == 13) / (double)scores.Count > .6)
                 expectedContract = scores.Count(x => x == 12) >= scores.Count(x => x == 13) ? ExpectedContract.SmallSlam : ExpectedContract.GrandSlam;
             else expectedContract = ExpectedContract.Game;
 

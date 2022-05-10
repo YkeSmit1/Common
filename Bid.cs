@@ -1,4 +1,7 @@
 ﻿using System;
+using JetBrains.Annotations;
+
+// ReSharper disable InconsistentNaming
 
 namespace Common
 {
@@ -12,6 +15,7 @@ namespace Common
         align
     }
 
+    [PublicAPI]
     public class Bid : IEquatable<Bid>, IComparable<Bid>
     {
         public static readonly Bid AlignBid = new Bid(BidType.align);
@@ -20,23 +24,9 @@ namespace Common
         public static readonly Bid Dbl = new Bid(BidType.dbl);
         public static readonly Bid Rdbl = new Bid(BidType.rdbl);
 
-        public static readonly Bid OneClub = new Bid(1, Suit.Clubs);
-        public static readonly Bid twoNTBid = new Bid(2, Suit.NoTrump);
-        public static readonly Bid threeDiamondBid = new Bid(3, Suit.Diamonds);
-        public static readonly Bid threeSpadeBid = new Bid(3, Suit.Spades);
-        public static readonly Bid threeNTBid = new Bid(3, Suit.NoTrump);
-        public static readonly Bid fourClubBid = new Bid(4, Suit.Clubs);
-        public static readonly Bid fourDiamondBid = new Bid(4, Suit.Diamonds);
-        public static readonly Bid fourHeartsBid = new Bid(4, Suit.Hearts);
-        public static readonly Bid fourNTBid = new Bid(4, Suit.NoTrump);
-        public static readonly Bid fiveClubBid = new Bid(5, Suit.Clubs);
-        public static readonly Bid fiveDiamondBid = new Bid(5, Suit.Diamonds);
-        public static readonly Bid fiveHeartsBid = new Bid(5, Suit.Hearts);
-        public static readonly Bid sixSpadeBid = new Bid(6, Suit.Spades);
-
         public readonly BidType bidType;
-        public int rank { get; set; }
-        public Suit suit { get; set; }
+        public int rank { get; }
+        public Suit suit { get; }
         public string description = string.Empty;
 
         public Bid(int rank, Suit suit)
@@ -176,7 +166,7 @@ namespace Common
 
             return suit.CompareTo(other.suit);
         }
-        public static bool operator ==(Bid a, Bid b) => a is null ? b is null : a.Equals(b);
+        public static bool operator ==(Bid a, Bid b) => a?.Equals(b) ?? b is null;
         public static bool operator !=(Bid a, Bid b) => !(a == b);
         public static bool operator <(Bid a, Bid b) => a.CompareTo(b) < 0;
         public static bool operator >(Bid a, Bid b) => a.CompareTo(b) > 0;

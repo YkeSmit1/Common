@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace Common
 {
@@ -14,10 +15,11 @@ namespace Common
         }
     }
 
+    [PublicAPI]
     public class BoardDto
     {
         public string Event { get; set; }
-        public DateTime? Date { get; set; } = null;
+        public DateTime? Date { get; set; }
         public int BoardNumber { get; set; }
         public Player Dealer { get; set; }
         public string Vulnerable { get; set; }
@@ -59,11 +61,11 @@ namespace Common
             string line;
             while ((line = sr.ReadLine()) != null)
             {
-                var firstQouteIndex = line.IndexOf('"');
-                if (firstQouteIndex == -1)
+                var firstQuoteIndex = line.IndexOf('"');
+                if (firstQuoteIndex == -1)
                     continue;
-                var key = line[1..firstQouteIndex].Trim();
-                var value = line[firstQouteIndex..].Trim().TrimEnd(']').Trim('"');
+                var key = line[1..firstQuoteIndex].Trim();
+                var value = line[firstQuoteIndex..].Trim().TrimEnd(']').Trim('"');
 
                 switch (key)
                 {
@@ -86,7 +88,7 @@ namespace Common
                         break;
                     case "Deal":
                         var firstPlayer = value.Length > 0 ? Util.GetPlayer(value[0]) : Player.UnKnown;
-                        board.Deal = value.Replace('.', ',')[2..].Split(" ").ToList().Rotate(4 - (int)firstPlayer).Select((suit, Index) => (suit, Index))
+                        board.Deal = value.Replace('.', ',')[2..].Split(" ").ToList().Rotate(4 - (int)firstPlayer).Select((suit, index) => (suit, Index: index))
                             .ToDictionary(x => (Player)x.Index, x => x.suit);
                         break;
                     case "Declarer":
@@ -106,8 +108,6 @@ namespace Common
                         break;
                     case "Description":
                         board.Description = value;
-                        break;
-                    default:
                         break;
                 }
             }

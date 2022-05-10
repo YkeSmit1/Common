@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Common
 {
+    [PublicAPI]
     public class Pbn
     {
         public List<BoardDto> Boards { get; set; } = new List<BoardDto>();
@@ -47,7 +49,7 @@ namespace Common
         {
             Boards.Clear();
             var sb = new StringBuilder();
-            using var fileStream = File.OpenRead(filePath);
+            await using var fileStream = File.OpenRead(filePath);
             using var streamReader = new StreamReader(fileStream);
             string line;
             while ((line = await streamReader.ReadLineAsync()) != null)
@@ -67,8 +69,8 @@ namespace Common
         public async Task SaveAsync(string filePath)
         {
             File.Delete(filePath);
-            using var fileStream = File.OpenWrite(filePath);
-            using var streamWriter = new StreamWriter(fileStream);
+            await using var fileStream = File.OpenWrite(filePath);
+            await using var streamWriter = new StreamWriter(fileStream);
             foreach (var board in Boards)
             {
                 await streamWriter.WriteAsync(board.ToString());

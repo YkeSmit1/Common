@@ -4,10 +4,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
+// ReSharper disable InconsistentNaming
 
 namespace Common
 {
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
+    [PublicAPI]
     public class Auction
     {
         public Player CurrentPlayer { get; set; }
@@ -15,13 +18,10 @@ namespace Common
 
         public Dictionary<int, Dictionary<Player, Bid>> bids { get; set; } = new Dictionary<int, Dictionary<Player, Bid>>();
         public Bid currentContract = Bid.PassBid;
-        public bool responderHasSignedOff = false;
+        public bool responderHasSignedOff;
         public BidType currentBidType = BidType.pass;
 
-        private string DebuggerDisplay
-        {
-            get { return GetAuctionAll(Environment.NewLine); }
-        }
+        private string DebuggerDisplay => GetAuctionAll(Environment.NewLine);
 
         public string GetPrettyAuction(string separator)
         {
@@ -36,9 +36,9 @@ namespace Common
 
         public Player GetDeclarer()
         {
-            foreach (var biddingRoud in bids.Values)
+            foreach (var biddingRound in bids.Values)
             {
-                foreach (var bid in biddingRoud)
+                foreach (var bid in biddingRound)
                 {
                     if (bid.Value.bidType == BidType.bid && bid.Value.suit == currentContract.suit)
                         return bid.Key;
@@ -49,9 +49,9 @@ namespace Common
 
         public Player GetDeclarer(Suit suit)
         {
-            foreach (var biddingRoud in bids.Values)
+            foreach (var biddingRound in bids.Values)
             {
-                foreach (var bid in biddingRoud)
+                foreach (var bid in biddingRound)
                 {
                     if (bid.Value.bidType == BidType.bid && bid.Value.suit == suit)
                         return bid.Key;
@@ -113,7 +113,7 @@ namespace Common
         {
             return bids.SelectMany(x => x.Value.Values)
                 .SkipWhile(y => y == Bid.PassBid || y == Bid.AlignBid)
-                .Aggregate(string.Empty, (string current, Bid bid) => current + bid.ToStringASCII());
+                .Aggregate(string.Empty, (current, bid) => current + bid.ToStringASCII());
         }
 
         public IEnumerable<Bid> GetBids(Player player)
@@ -132,22 +132,9 @@ namespace Common
             }
         }
 
-        public bool Used4ClAsRelay()
-        {
-            var previousBiddingRound = bids.First();
-            foreach (var biddingRound in bids.Skip(1))
-            {
-                if (biddingRound.Value.TryGetValue(Player.North, out var bid) && bid == Bid.fourClubBid)
-                    return previousBiddingRound.Value[Player.South] == Bid.threeSpadeBid;
-
-                previousBiddingRound = biddingRound;
-            }
-            return false;
-        }
-
         public void CheckConsistency()
         {
-            var bidsSouth = GetBids(Player.South);
+            var bidsSouth = GetBids(Player.South).ToList();
             var previousBid = bidsSouth.First();
             foreach (var bid in bidsSouth.Skip(1))
             {
@@ -161,17 +148,17 @@ namespace Common
         }
         public Bid GetRelativeBid(Bid currentBid, int level, Player player)
         {
-            var biddingRound = bids.Single(bids => bids.Value.Where(y => y.Value == currentBid).Any());
+            var biddingRound = bids.Single(bid => bid.Value.Any(y => y.Value == currentBid));
             if (biddingRound.Key + level < 1)
                 return default;
-            return bids[biddingRound.Key + level].TryGetValue(player, out var bid) ? bid : default;
+            return bids[biddingRound.Key + level].TryGetValue(player, out var relBid) ? relBid : default;
         }
 
         public bool IsEndOfBidding()
         {
-            var allBids = bids.SelectMany(x => x.Value).Select(y => y.Value).Where(z => z.bidType != BidType.align);
-            return (allBids.Count() == 4 && allBids.All(bid => bid == Bid.PassBid)) ||
-                allBids.Count() > 3 && allBids.TakeLast(3).Count() == 3 && allBids.TakeLast(3).All(bid => bid == Bid.PassBid);
+            var allBids = bids.SelectMany(x => x.Value).Select(y => y.Value).Where(z => z.bidType != BidType.align).ToList();
+            return (allBids.Count == 4 && allBids.All(bid => bid == Bid.PassBid)) ||
+                allBids.Count > 3 && allBids.TakeLast(3).Count() == 3 && allBids.TakeLast(3).All(bid => bid == Bid.PassBid);
         }
 
         public bool BidIsPossible(Bid bid)
@@ -184,7 +171,7 @@ namespace Common
                     !Util.IsSameTeam(CurrentPlayer, GetDeclarer()),
                 BidType.rdbl => currentBidType == BidType.dbl &&
                     Util.IsSameTeam(CurrentPlayer, GetDeclarer()),
-                _ => throw new InvalidEnumArgumentException(nameof(bid.bidType), (int)bid.bidType, null),
+                _ => throw new InvalidEnumArgumentException(nameof(bid.bidType), (int)bid.bidType, typeof(BidType)),
             };
         }
     }
