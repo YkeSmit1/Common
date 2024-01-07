@@ -10,7 +10,7 @@ namespace Common
     [PublicAPI]
     public class Pbn
     {
-        public List<BoardDto> Boards { get; set; } = new List<BoardDto>();
+        public List<BoardDto> Boards { get; set; } = [];
 
         public void Load(string filePath)
         {
@@ -18,8 +18,7 @@ namespace Common
             var sb = new StringBuilder();
             using var fileStream = File.OpenRead(filePath);
             using var streamReader = new StreamReader(fileStream);
-            string line;
-            while ((line = streamReader.ReadLine()) != null)
+            while (streamReader.ReadLine() is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line))
                 {
@@ -51,8 +50,7 @@ namespace Common
             var sb = new StringBuilder();
             await using var fileStream = File.OpenRead(filePath);
             using var streamReader = new StreamReader(fileStream);
-            string line;
-            while ((line = await streamReader.ReadLineAsync()) != null)
+            while (await streamReader.ReadLineAsync() is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line))
                 {

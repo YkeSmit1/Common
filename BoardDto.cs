@@ -48,7 +48,6 @@ namespace Common
             sb.AppendLine($"""[Auction "{Util.GetPlayerString(Dealer)}"]""");
             foreach (var biddingRound in Auction.Bids.Values)
                     sb.AppendLine(string.Join('\t', biddingRound.Values.Select(x => x.ToStringASCII())));
-
             return sb.ToString();
         }
 
