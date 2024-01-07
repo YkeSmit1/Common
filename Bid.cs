@@ -18,36 +18,38 @@ namespace Common
     [PublicAPI]
     public class Bid : IEquatable<Bid>, IComparable<Bid>
     {
-        public static readonly Bid AlignBid = new Bid(BidType.align);
-        public static readonly Bid InvalidBid = new Bid(BidType.invalid);
-        public static readonly Bid PassBid = new Bid(BidType.pass);
-        public static readonly Bid Dbl = new Bid(BidType.dbl);
-        public static readonly Bid Rdbl = new Bid(BidType.rdbl);
+        public static readonly Bid AlignBid = new(BidType.align);
+        public static readonly Bid InvalidBid = new(BidType.invalid);
+        public static readonly Bid PassBid = new(BidType.pass);
+        public static readonly Bid Dbl = new(BidType.dbl);
+        public static readonly Bid Rdbl = new(BidType.rdbl);
 
         public readonly BidType bidType;
-        public int rank { get; }
-        public Suit suit { get; }
+
+        public int Rank { get; }
+
+        public Suit Suit { get; }
         public string description = string.Empty;
 
         public Bid(int rank, Suit suit)
         {
             bidType = BidType.bid;
-            this.suit = suit;
-            this.rank = rank;
+            this.Suit = suit;
+            this.Rank = rank;
         }
 
         public Bid(BidType bidType)
         {
             this.bidType = bidType;
-            suit = default;
-            rank = default;
+            Suit = default;
+            Rank = default;
         }
 
         public override string ToString()
         {
             return bidType switch
             {
-                BidType.bid => rank + Util.GetSuitDescription(suit),
+                BidType.bid => Rank + Util.GetSuitDescription(Suit),
                 BidType.pass => "Pass",
                 BidType.dbl => "Dbl",
                 BidType.rdbl => "Rdbl",
@@ -61,7 +63,7 @@ namespace Common
         {
             return bidType switch
             {
-                BidType.bid => rank + Util.GetSuitDescriptionASCII(suit),
+                BidType.bid => Rank + Util.GetSuitDescriptionASCII(Suit),
                 BidType.pass => "Pass",
                 BidType.dbl => "X",
                 BidType.rdbl => "XX",
@@ -83,21 +85,24 @@ namespace Common
 
         public static Bid GetBid(int bidId)
         {
-            return bidId == -1 ? Dbl : bidId == 0 ? PassBid : new Bid((bidId - 1) / 5 + 1, (Suit)((bidId - 1) % 5));
+            return bidId switch
+            {
+                -1 => Dbl,
+                0 => PassBid,
+                _ => new Bid((bidId - 1) / 5 + 1, (Suit)((bidId - 1) % 5))
+            };
         }
 
         public static int GetBidId(Bid bid)
         {
-            return bid == Dbl ? -1 : bid == PassBid ? 0 : ((bid.rank - 1) * 5) + (int)bid.suit + 1;
+            return bid == Dbl ? -1 : bid == PassBid ? 0 : ((bid.Rank - 1) * 5) + (int)bid.Suit + 1;
         }
 
         public static Bid NextBid(Bid bid)
         {
             if (bid == PassBid)
                 return new Bid(1, Suit.Clubs);
-            if (bid.suit == Suit.NoTrump)
-                return new Bid(bid.rank + 1, Suit.Clubs);
-            return new Bid(bid.rank, bid.suit + 1);
+            return bid.Suit == Suit.NoTrump ? new Bid(bid.Rank + 1, Suit.Clubs) : new Bid(bid.Rank, bid.Suit + 1);
         }
 
         public static Bid GetGameContractSafe(Suit trumpSuit, Bid currentBid, bool canUseNextBid)
@@ -118,14 +123,14 @@ namespace Common
                 _ => throw new ArgumentException(nameof(trumpSuit)),
             };
             var contract = CheapestContract(currentBid, bid, canUseNextBid);
-            return contract.rank <= 5 ? contract : InvalidBid;
+            return contract.Rank <= 5 ? contract : InvalidBid;
         }
 
         private static Bid CheapestContract(Bid currentBid, Bid bid, bool canUseNextBid)
         {
-            if (currentBid.suit == bid.suit && currentBid.rank < bid.rank)
+            if (currentBid.Suit == bid.Suit && currentBid.Rank < bid.Rank)
                 return bid;
-            if (currentBid.suit == bid.suit)
+            if (currentBid.Suit == bid.Suit)
                 return PassBid;
             if (currentBid + (canUseNextBid ? 0 : 1) < bid)
                 return bid;
@@ -134,9 +139,9 @@ namespace Common
 
         public static Bid CheapestContract(Bid currentBid, Suit suit)
         {
-            if (currentBid.suit == suit)
+            if (currentBid.Suit == suit)
                 return PassBid;
-            var bid = new Bid(currentBid.rank + (currentBid.suit > suit ? 1 : 0), suit);
+            var bid = new Bid(currentBid.Rank + (currentBid.Suit > suit ? 1 : 0), suit);
             return bid;
         }
 
@@ -152,19 +157,19 @@ namespace Common
         }
 
         // Operators
-        public bool Equals(Bid other) => !(other is null) && suit == other.suit && bidType == other.bidType && rank == other.rank;
+        public bool Equals(Bid other) => !(other is null) && Suit == other.Suit && bidType == other.bidType && Rank == other.Rank;
         public override bool Equals(object obj) => obj is Bid other && Equals(other);
-        public override int GetHashCode() => HashCode.Combine(bidType, rank, suit);
+        public override int GetHashCode() => HashCode.Combine(bidType, Rank, Suit);
 
         public int CompareTo(Bid other)
         {
             var bidTypeComparison = bidType.CompareTo(other.bidType);
             if (bidTypeComparison != 0) return bidTypeComparison;
 
-            var rankComparison = rank.CompareTo(other.rank);
+            var rankComparison = Rank.CompareTo(other.Rank);
             if (rankComparison != 0) return rankComparison;
 
-            return suit.CompareTo(other.suit);
+            return Suit.CompareTo(other.Suit);
         }
         public static bool operator ==(Bid a, Bid b) => a?.Equals(b) ?? b is null;
         public static bool operator !=(Bid a, Bid b) => !(a == b);

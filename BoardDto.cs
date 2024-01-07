@@ -31,25 +31,23 @@ namespace Common
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine($@"[Event ""{Event}""]");
+            sb.AppendLine($"""[Event "{Event}"]""");
             if (Date != null)
-                sb.AppendLine($@"[Date ""{Date:yyyy.MM.dd}""]");
-            sb.AppendLine($@"[Board ""{BoardNumber}""]");
-            sb.AppendLine($@"[Dealer ""{Util.GetPlayerString(Dealer)}""]");
-            sb.AppendLine($@"[Vulnerable ""{Vulnerable}""]");
+                sb.AppendLine($"""[Date "{Date:yyyy.MM.dd}"]""");
+            sb.AppendLine($"""[Board "{BoardNumber}"]""");
+            sb.AppendLine($"""[Dealer "{Util.GetPlayerString(Dealer)}"]""");
+            sb.AppendLine($"""[Vulnerable "{Vulnerable}"]""");
             if (!string.IsNullOrWhiteSpace(Description))
-                sb.AppendLine($@"[Description ""{Description}""]");
+                sb.AppendLine($"""[Description "{Description}"]""");
             var sortedDeal = new SortedDictionary<Player, string>(Deal);
-            sb.AppendLine($@"[Deal ""{Util.GetPlayerString(Dealer)}:{string.Join(' ', sortedDeal.ToList().Rotate((int)Dealer)
-                .Select(x => x.Value.Replace(',', '.')))}""]");
+            sb.AppendLine($"""[Deal "{Util.GetPlayerString(Dealer)}:{string.Join(' ', sortedDeal.ToList().Rotate((int)Dealer)
+                .Select(x => x.Value.Replace(',', '.')))}"]""");
             if (Declarer != Player.UnKnown)
-                sb.AppendLine($@"[Declarer ""{Util.GetPlayerString(Declarer)}""]");
-            if (Auction != null)
-            {
-                sb.AppendLine($@"[Auction ""{Util.GetPlayerString(Dealer)}""]");
-                foreach (var biddingRound in Auction.bids.Values)
+                sb.AppendLine($"""[Declarer "{Util.GetPlayerString(Declarer)}"]""");
+            if (Auction == null) return sb.ToString();
+            sb.AppendLine($"""[Auction "{Util.GetPlayerString(Dealer)}"]""");
+            foreach (var biddingRound in Auction.Bids.Values)
                     sb.AppendLine(string.Join('\t', biddingRound.Values.Select(x => x.ToStringASCII())));
-            }
 
             return sb.ToString();
         }
@@ -58,8 +56,7 @@ namespace Common
         {
             var board = new BoardDto();
             using var sr = new StringReader(pbnString);
-            string line;
-            while ((line = sr.ReadLine()) != null)
+            while (sr.ReadLine() is { } line)
             {
                 var firstQuoteIndex = line.IndexOf('"');
                 if (firstQuoteIndex == -1)
@@ -101,7 +98,7 @@ namespace Common
                             while ((line = sr.ReadLine()) != null && line[0] != '[')
                             {
                                 var bids = line.Split(new[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries).Where(x => !x.StartsWith('=')).ToList().Select((bid, index) => (bid, index));
-                                board.Auction.bids[biddingRound] = bids.ToDictionary(x => (Player)x.index, x => Bid.FromStringASCII(x.bid));
+                                board.Auction.Bids[biddingRound] = bids.ToDictionary(x => (Player)x.index, x => Bid.FromStringASCII(x.bid));
                                 biddingRound++;
                             }
                         }

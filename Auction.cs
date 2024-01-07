@@ -16,7 +16,8 @@ namespace Common
         public Player CurrentPlayer { get; set; }
         public int CurrentBiddingRound { get; set; }
 
-        public Dictionary<int, Dictionary<Player, Bid>> bids { get; set; } = new Dictionary<int, Dictionary<Player, Bid>>();
+        public Dictionary<int, Dictionary<Player, Bid>> Bids { get; set; } = [];
+
         public Bid currentContract = Bid.PassBid;
         public bool responderHasSignedOff;
         public BidType currentBidType = BidType.pass;
@@ -25,22 +26,22 @@ namespace Common
 
         public string GetPrettyAuction(string separator)
         {
-            return bids.Aggregate(new StringBuilder(), (sb, kvp) => sb.AppendJoin(" ", kvp.Value.Where(p => new [] { Player.North, Player.South }.Contains(p.Key))
+            return Bids.Aggregate(new StringBuilder(), (sb, kvp) => sb.AppendJoin(" ", kvp.Value.Where(p => new [] { Player.North, Player.South }.Contains(p.Key))
                 .Select(x => x.Value).Where(y => y != Bid.AlignBid)).Append(separator), sb => sb.ToString());
         }
 
         public string GetAuctionAll(string separator)
         {
-            return bids.Aggregate(new StringBuilder(), (sb, kvp) => sb.AppendJoin(" ", kvp.Value.Values.Where(y => y != Bid.AlignBid)).Append(separator), sb => sb.ToString());
+            return Bids.Aggregate(new StringBuilder(), (sb, kvp) => sb.AppendJoin(" ", kvp.Value.Values.Where(y => y != Bid.AlignBid)).Append(separator), sb => sb.ToString());
         }
 
         public Player GetDeclarer()
         {
-            foreach (var biddingRound in bids.Values)
+            foreach (var biddingRound in Bids.Values)
             {
                 foreach (var bid in biddingRound)
                 {
-                    if (bid.Value.bidType == BidType.bid && bid.Value.suit == currentContract.suit)
+                    if (bid.Value.bidType == BidType.bid && bid.Value.Suit == currentContract.Suit)
                         return bid.Key;
                 }
             }
@@ -49,11 +50,11 @@ namespace Common
 
         public Player GetDeclarer(Suit suit)
         {
-            foreach (var biddingRound in bids.Values)
+            foreach (var biddingRound in Bids.Values)
             {
                 foreach (var bid in biddingRound)
                 {
-                    if (bid.Value.bidType == BidType.bid && bid.Value.suit == suit)
+                    if (bid.Value.bidType == BidType.bid && bid.Value.Suit == suit)
                         return bid.Key;
                 }
             }
@@ -69,9 +70,9 @@ namespace Common
 
         public void AddBid(Bid bid)
         {
-            if (!bids.ContainsKey(CurrentBiddingRound))
-                bids[CurrentBiddingRound] = new Dictionary<Player, Bid>();
-            bids[CurrentBiddingRound][CurrentPlayer] = bid;
+            if (!Bids.ContainsKey(CurrentBiddingRound))
+                Bids[CurrentBiddingRound] = [];
+            Bids[CurrentBiddingRound][CurrentPlayer] = bid;
 
             if (CurrentPlayer == Player.South)
             {
@@ -89,7 +90,7 @@ namespace Common
 
         public void Clear(Player dealer)
         {
-            bids.Clear();
+            Bids.Clear();
             CurrentPlayer = dealer;
             CurrentBiddingRound = 1;
             currentContract = Bid.PassBid;
@@ -97,37 +98,37 @@ namespace Common
             var player = Player.West;
             while (player != dealer)
             {
-                if (!bids.ContainsKey(1))
-                    bids[1] = new Dictionary<Player, Bid>();
-                bids[1][player] = Bid.AlignBid;
+                if (!Bids.ContainsKey(1))
+                    Bids[1] = new Dictionary<Player, Bid>();
+                Bids[1][player] = Bid.AlignBid;
                 player++;
             }
         }
 
         public string GetBidsAsString(Player player)
         {
-            return bids.Where(x => x.Value.ContainsKey(player)).Aggregate(string.Empty, (current, biddingRound) => current + biddingRound.Value[player]);
+            return Bids.Where(x => x.Value.ContainsKey(player)).Aggregate(string.Empty, (current, biddingRound) => current + biddingRound.Value[player]);
         }
 
         public string GetBidsAsStringASCII()
         {
-            return bids.SelectMany(x => x.Value.Values)
+            return Bids.SelectMany(x => x.Value.Values)
                 .SkipWhile(y => y == Bid.PassBid || y == Bid.AlignBid)
                 .Aggregate(string.Empty, (current, bid) => current + bid.ToStringASCII());
         }
 
         public IEnumerable<Bid> GetBids(Player player)
         {
-            return bids.Where(x => x.Value.ContainsKey(player)).Select(x => x.Value[player]);
+            return Bids.Where(x => x.Value.ContainsKey(player)).Select(x => x.Value[player]);
         }
 
         public void SetBids(Player player, IEnumerable<Bid> newBids)
         {
-            bids.Clear();
+            Bids.Clear();
             var biddingRound = 1;
             foreach (var bid in newBids)
             {
-                bids[biddingRound] = new Dictionary<Player, Bid>(new List<KeyValuePair<Player, Bid>> { new KeyValuePair<Player, Bid>(player, bid) });
+                Bids[biddingRound] = new Dictionary<Player, Bid>(new List<KeyValuePair<Player, Bid>> { new(player, bid) });
                 biddingRound++;
             }
         }
@@ -138,25 +139,22 @@ namespace Common
             var previousBid = bidsSouth.First();
             foreach (var bid in bidsSouth.Skip(1))
             {
-                if (bid.bidType == BidType.bid)
-                {
-                    if (bid <= previousBid)
-                        throw new InvalidOperationException("Bid is lower");
-                    previousBid = bid;
-                }
+                if (bid.bidType != BidType.bid) continue;
+                if (bid <= previousBid)
+                    throw new InvalidOperationException("Bid is lower");
+                previousBid = bid;
             }
         }
+
         public Bid GetRelativeBid(Bid currentBid, int level, Player player)
         {
-            var biddingRound = bids.Single(bid => bid.Value.Any(y => y.Value == currentBid));
-            if (biddingRound.Key + level < 1)
-                return default;
-            return bids[biddingRound.Key + level].TryGetValue(player, out var relBid) ? relBid : default;
+            var biddingRound = Bids.Single(bid => bid.Value.Any(y => y.Value == currentBid));
+            return biddingRound.Key + level < 1 ? default : Bids[biddingRound.Key + level].GetValueOrDefault(player);
         }
 
         public bool IsEndOfBidding()
         {
-            var allBids = bids.SelectMany(x => x.Value).Select(y => y.Value).Where(z => z.bidType != BidType.align).ToList();
+            var allBids = Bids.SelectMany(x => x.Value).Select(y => y.Value).Where(z => z.bidType != BidType.align).ToList();
             return (allBids.Count == 4 && allBids.All(bid => bid == Bid.PassBid)) ||
                 allBids.Count > 3 && allBids.TakeLast(3).Count() == 3 && allBids.TakeLast(3).All(bid => bid == Bid.PassBid);
         }
