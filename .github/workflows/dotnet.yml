@@ -20,4 +20,4 @@ jobs:
     - name: Pack
       run: dotnet pack --configuration Release --no-build  # Use --no-build since we already built
     - name: Push (Simplified)
-      run: dotnet nuget push "bin/Release/*.nupkg" --source "https://nuget.pkg.github.com/YkeSmit1/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
+      run: dotnet nuget push "Common/bin/Release/*.nupkg" --source "https://nuget.pkg.github.com/YkeSmit1/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
