@@ -15,7 +15,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    - run: dotnet pack --configuration Release
+    - name: Build
+      run: dotnet build --configuration Release
+    - name: Pack
+      run: dotnet pack --configuration Release --no-build  # Use --no-build since we already built
     - run: dotnet nuget push "bin/Release/*.nupkg" 
       env:
         NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
